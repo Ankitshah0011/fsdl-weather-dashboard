@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WeatherViz — Interactive Weather Dashboard</title>
+  <meta name="description" content="Interactive weather dashboard with charts (Chart.js) and real forecast data (Open-Meteo)." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- ✅ IMPORTANT: use the correct css file name -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Chart.js (CDN) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+
+  <!-- Your JS -->
+  <script defer src="script.js"></script>
+</head>
+
+<body>
+  <!-- Background -->
+  <div class="bg" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="gridGlow"></div>
+    <div class="noise"></div>
+  </div>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-label="WeatherViz logo">WV</div>
+      <div>
+        <div class="title">weather-up</div>
+        <div class="subtitle">Real data • Fast charts • Premium UI</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="unitBtn" class="btn ghost" type="button" title="Toggle °C / °F" aria-label="Toggle temperature unit">°C</button>
+      <button id="geoBtn" class="btn" type="button" title="Use my location" aria-label="Use my current location">
+        <span class="dot" aria-hidden="true"></span> Use my location
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Search -->
+    <section class="panel panelPad">
+      <div class="searchRow">
+        <div class="searchBox">
+          <input
+            id="cityInput"
+            class="input"
+            type="text"
+            placeholder="Search city (e.g., Pune, Kathmandu, New York)…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Search city"
+            aria-autocomplete="list"
+            aria-controls="suggestions"
+            aria-expanded="false"
+          />
+          <div id="suggestions" class="suggestions" aria-hidden="true" role="listbox"></div>
+        </div>
+        <button id="searchBtn" class="btn" type="button" aria-label="Search weather for city">Search</button>
+      </div>
+
+      <div class="metaRow">
+        <div class="pill" id="placePill">—</div>
+        <div class="pill" id="timePill">—</div>
+        <div class="pill subtle" id="statusPill">Ready</div>
+      </div>
+
+      <!-- tiny keyboard hint -->
+      <div class="footer" style="margin-top:10px;">
+        <div class="hint">⌨️ Press <b>Enter</b> to search • <b>Esc</b> to close suggestions</div>
+        <div class="hint">Tip: try “Kathmandu” or “Pune”.</div>
+      </div>
+    </section>
+
+    <!-- Loading + Error -->
+    <section class="alerts">
+      <div id="loading" class="loading hidden" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <div>
+          <div class="loadingTitle">Fetching live forecast…</div>
+          <div class="loadingSub">Open-Meteo + geocoding</div>
+        </div>
+      </div>
+
+      <div id="errorBox" class="error hidden" role="alert" aria-live="assertive">
+        <div class="errorIcon" aria-hidden="true">!</div>
+        <div>
+          <div class="errorTitle" id="errorTitle">Something went wrong</div>
+          <div class="errorSub" id="errorSub">Please try again.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Today Summary + Charts -->
+    <section class="grid">
+      <section class="card hero">
+        <div class="cardHead">
+          <h2>Today</h2>
+          <div class="badge" id="conditionBadge">—</div>
+        </div>
+
+        <div class="heroBody">
+          <div class="tempBlock">
+            <div class="tempNow">
+              <span id="tempNow">—</span><span class="unit" id="tempUnit">°C</span>
+            </div>
+            <div class="feel">Feels like <span id="tempFeel">—</span><span class="unitSmall" id="feelUnit">°C</span></div>
+
+            <div class="wxRow">
+              <div class="wxIcon" id="wxIcon">⛅</div>
+              <div class="wxText">
+                <div class="wxMain" id="wxMain">—</div>
+                <div class="wxSub" id="wxSub">Updated when you search</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="k">Wind</div>
+              <div class="v"><span id="windNow">—</span> <span class="miniUnit" id="windUnit">km/h</span></div>
+            </div>
+            <div class="stat">
+              <div class="k">Humidity</div>
+              <div class="v"><span id="humNow">—</span><span class="miniUnit">%</span></div>
+            </div>
+            <div class="stat">
+              <div class="k">Rain</div>
+              <div class="v"><span id="rainNow">—</span> <span class="miniUnit" id="rainUnit">%</span></div>
+            </div>
+            <div class="stat">
+              <div class="k">Precip</div>
+              <div class="v"><span id="precipNow">—</span> <span class="miniUnit">mm</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ✅ Chart cards: add a fixed-height wrapper so charts don’t stretch -->
+      <section class="card chartCard">
+        <div class="cardHead">
+          <h3>Next 24 hours • Temperature</h3>
+          <div class="chip">Line</div>
+        </div>
+        <div class="chartWrap">
+          <canvas id="tempChart"></canvas>
+        </div>
+      </section>
+
+      <section class="card chartCard">
+        <div class="cardHead">
+          <h3>Next 24 hours • Rain probability</h3>
+          <div class="chip">Bar</div>
+        </div>
+        <div class="chartWrap">
+          <canvas id="rainChart"></canvas>
+        </div>
+      </section>
+
+      <section class="card chartCard">
+        <div class="cardHead">
+          <h3>Next 24 hours • Wind speed</h3>
+          <div class="chip">Line</div>
+        </div>
+        <div class="chartWrap">
+          <canvas id="windChart"></canvas>
+        </div>
+      </section>
+    </section>
+
+    <!-- 7-day -->
+    <section class="card forecast">
+      <div class="cardHead">
+        <h3>7-Day Forecast</h3>
+        <div class="chip" id="forecastChip">Daily</div>
+      </div>
+
+      <div id="forecastGrid" class="forecastGrid">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>Data: Open-Meteo • Charts: Chart.js • UI: WeatherViz</div>
+      <div class="hint">Made for your dashboard assignment ✅</div>
+    </footer>
+  </main>
+
+  <!-- ✅ Tiny CSS just for chart height (kept inside HTML so it works instantly)
+       If you want, I can move it to styles.css too -->
+  <style>
+    .chartWrap{
+      height: 220px;
+      margin-top: 10px;
+    }
+    @media (max-width: 520px){
+      .chartWrap{ height: 200px; }
+    }
+    /* make canvas fill the wrapper properly */
+    .chartWrap canvas{
+      width: 100% !important;
+      height: 100% !important;
+      display:block;
+    }
+  </style>
+</body>
+</html>
